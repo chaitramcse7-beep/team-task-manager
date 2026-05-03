@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Team Task Manager</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f7fb;
+    margin: 0;
+    padding: 0;
+}
+header {
+    background: #1e293b;
+    color: white;
+    padding: 15px 30px;
+    font-size: 20px;
+}
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+}
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+}
+button {
+    padding: 10px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    width: 100%;
+}
+button:hover {
+    background: #1d4ed8;
+}
+.status {
+    margin-top: 10px;
+    font-size: 14px;
+}
+.dashboard {
+    display: flex;
+    gap: 20px;
+}
+.stat {
+    flex: 1;
+    background: #e2e8f0;
+    padding: 15px;
+    text-align: center;
+    border-radius: 10px;
+}
+</style>
+
+</head>
+<body>
+
+<header>🚀 Team Task Manager</header>
+
+<div class="container">
+
+<div class="card">
+<h3>Login</h3>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<div class="status" id="loginStatus"></div>
+</div>
+
+<div class="card">
+<h3>Create Project</h3>
+<input id="projectName" placeholder="Project Name">
+<button onclick="createProject()">Create Project</button>
+<div class="status" id="projectStatus"></div>
+</div>
+
+<div class="card">
+<h3>Create Task</h3>
+<input id="taskTitle" placeholder="Task Title">
+<input id="projectId" placeholder="Project ID">
+<input id="assignedTo" placeholder="User ID">
+<button onclick="createTask()">Create Task</button>
+<div class="status" id="taskStatus"></div>
+</div>
+
+<div class="card">
+<h3>Dashboard</h3>
+<button onclick="loadDashboard()">Refresh</button>
+
+<div class="dashboard">
+<div class="stat">
+<h4>Total</h4>
+<p id="total">0</p>
+</div>
+<div class="stat">
+<h4>Pending</h4>
+<p id="pending">0</p>
+</div>
+<div class="stat">
+<h4>Completed</h4>
+<p id="completed">0</p>
+</div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+const BASE_URL = "https://web-production-6b9b.up.railway.app";
+
+function setStatus(id, msg, success=true){
+    const el = document.getElementById(id);
+    el.innerText = msg;
+    el.style.color = success ? "green" : "red";
+}
+
+async function login() {
+    const res = await fetch(BASE_URL + "/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            email: email.value,
+            password: password.value
+        })
+    });
+
+    const data = await res.json();
+
+    if(data.token){
+        localStorage.setItem("token", data.token);
+        setStatus("loginStatus", "Login successful");
+    } else {
+        setStatus("loginStatus", "Login failed", false);
+    }
+}
+
+function getToken(){
+    return localStorage.getItem("token");
+}
+
+async function createProject(){
+    const res = await fetch(BASE_URL + "/projects", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + getToken()
+        },
+        body: JSON.stringify({ name: projectName.value })
+    });
+
+    setStatus("projectStatus", "Project created");
+}
+
+async function createTask(){
+    await fetch(BASE_URL + "/tasks", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + getToken()
+        },
+        body: JSON.stringify({
+            title: taskTitle.value,
+            project_id: parseInt(projectId.value),
+            assigned_to: parseInt(assignedTo.value)
+        })
+    });
+
+    setStatus("taskStatus", "Task created");
+}
+
+async function loadDashboard(){
+    const res = await fetch(BASE_URL + "/dashboard", {
+        headers: {
+            "Authorization": "Bearer " + getToken()
+        }
+    });
+
+    const data = await res.json();
+
+    total.innerText = data.total;
+    pending.innerText = data.pending;
+    completed.innerText = data.completed;
+}
+</script>
+
+</body>
+</html>
